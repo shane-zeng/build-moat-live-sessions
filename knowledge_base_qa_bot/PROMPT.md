@@ -38,13 +38,29 @@ This is the traditional RAG path: semantic retrieval with embeddings and a vecto
 Answer these before you start coding:
 
 1. Which retrieval strategy did you choose, and why?
+
+   I would choose Markdown KB because the knowledge base is small and I am still learning the retrieval flow. It is also easier to debug because the index is inspectable and the retrieved Markdown sections are human-readable.
 2. What is the retrieval unit in your design: file, section, or chunk?
+
+   The retrieval unit is a Markdown section. Each section is defined by a Markdown heading and its content. This is more precise than retrieving a whole file, while still preserving the document structure better than arbitrary chunks.
 3. How do you decide what goes into the prompt?
+
+   The prompt should include the user question, the top relevant Markdown sections, and each section's source reference such as `filename#heading`. It should also instruct the model to answer only from the provided context, cite sources clearly, and say it cannot confirm if the context does not contain enough information.
 4. How do you cite sources so users can inspect the original Markdown?
+
+   Each indexed section should have a stable source reference in the format `filename#heading`. The answer should include the relevant source references so users can open the original Markdown file and inspect the exact section used to generate the answer.
 5. What should happen when retrieval finds weak or irrelevant results?
+
+   If retrieval finds weak or irrelevant results, the system should return a fallback response instead of forcing an answer. I would use a score threshold and ask the model to say it cannot confirm from the knowledge base when the retrieved context is not strong enough.
 6. When would you switch from Markdown KB to Vector RAG?
+
+   I would switch from Markdown KB to Vector RAG when keyword or heading-based retrieval starts missing relevant answers, especially when users ask more semantic or paraphrased questions. I would also consider Vector RAG when the knowledge base becomes much larger and section-level keyword search is no longer accurate enough.
 7. When would you switch from Vector RAG back to a Markdown index?
+
+   I would switch from Vector RAG back to a Markdown index when the knowledge base is small, well-structured, and easier to navigate by headings or keywords. I would also switch back if vector search returns semantically similar but incorrect chunks, or if I need better debuggability, lower cost, and more inspectable citations.
 8. If the knowledge base grows from 10 files to 100,000 files, what changes?
+
+   If the knowledge base grows to 100,000 files, I would not rebuild the whole index on every update. I would need incremental indexing, better metadata, and a more scalable search backend instead of only an in-memory index or local JSON file. I would also consider hybrid retrieval with keyword and vector search, plus monitoring for retrieval quality and stale or incorrect documents.
 
 ## Verification
 
