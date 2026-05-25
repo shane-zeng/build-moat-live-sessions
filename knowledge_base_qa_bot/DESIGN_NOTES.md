@@ -73,6 +73,26 @@ I cannot confirm from the knowledge base.
 
 This is better than forcing an answer with weak evidence.
 
+## Score Threshold and Fallback
+
+The BM25 score works like a small search relevance score. This is similar to Elasticsearch: search returns documents with scores, and the application can set a threshold so weak matches are not treated as good results.
+
+In this bot, the threshold is a quality gate before the LLM. Finding a section is not enough. The best retrieved section also needs to be relevant enough before it is added to the prompt.
+
+The flow becomes:
+
+```text
+question
+-> BM25 search
+-> filter sections by minimum score
+-> fallback if all scores are too weak
+-> send strong sections to the LLM
+```
+
+This helps avoid sending weak or irrelevant context to the model. If the retrieval score is too low, the bot should say it cannot confirm from the knowledge base instead of forcing an answer with a shaky citation.
+
+The current implementation uses `MIN_BM25_SCORE`, which can be tuned through the environment if the retrieval behavior is too strict or too loose.
+
 ## Verification Results
 
 The core curl tests passed:

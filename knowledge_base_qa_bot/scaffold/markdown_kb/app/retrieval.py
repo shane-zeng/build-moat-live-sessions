@@ -23,6 +23,7 @@ Rules:
 3. If the CONTEXT does not contain the answer, say: "I cannot confirm from the knowledge base."
 4. Do not guess, invent policies, or use outside knowledge.
 """
+MIN_BM25_SCORE = float(os.getenv("MIN_BM25_SCORE", "1.5"))
 
 _llm = None
 
@@ -79,9 +80,20 @@ def query(question: str) -> dict:
             "sources": [],
         }
 
+    strong_sections = [
+        (section, score)
+        for section, score in ranked_sections
+        if score >= MIN_BM25_SCORE
+    ]
+    if not strong_sections:
+        return {
+            "answer": "I cannot confirm from the knowledge base.",
+            "sources": [],
+        }
+
     response = get_llm().invoke([
         SystemMessage(content=SYSTEM_PROMPT),
-        HumanMessage(content=build_prompt(question, ranked_sections)),
+        HumanMessage(content=build_prompt(question, strong_sections)),
     ])
 
     sources = [
@@ -91,7 +103,7 @@ def query(question: str) -> dict:
             "score": round(score, 3),
             "content": section.content[:240],
         }
-        for section, score in ranked_sections
+        for section, score in strong_sections
     ]
 
     return {
