@@ -93,6 +93,51 @@ This helps avoid sending weak or irrelevant context to the model. If the retriev
 
 The current implementation uses `MIN_BM25_SCORE`, which can be tuned through the environment if the retrieval behavior is too strict or too loose.
 
+## How to Test the Score Threshold
+
+The threshold is read when the server starts, so the server needs to be restarted after changing `MIN_BM25_SCORE`.
+
+Start with the default threshold:
+
+```bash
+MIN_BM25_SCORE=1.5 python -m uvicorn app.main:app --reload
+```
+
+Then build the index:
+
+```bash
+curl -X POST http://localhost:8000/index
+```
+
+Ask a strong in-scope question:
+
+```bash
+curl -X POST http://localhost:8000/chat \
+  -H "Content-Type: application/json" \
+  -d '{"query": "Can I change my email address?"}'
+```
+
+With the default threshold, this should return an answer with `account_help.md#change-email-address`. The response may also show weaker matches with lower scores, such as `shipping_faq.md#tracking-number`, if their score is still above the threshold.
+
+To prove the threshold is working, restart the server with a very high threshold:
+
+```bash
+MIN_BM25_SCORE=10 python -m uvicorn app.main:app --reload
+```
+
+Ask the same question again. Since the best score for the email question is below 10, the system should now return:
+
+```json
+{
+  "answer": "I cannot confirm from the knowledge base.",
+  "sources": []
+}
+```
+
+This confirms that retrieval can find sections, but the system still refuses to send them to the LLM when the scores are below the threshold.
+
+Another useful test is setting the threshold to `2`. For the email question, the strong account section should remain, while weaker sections around `1.5` should be filtered out.
+
 ## Verification Results
 
 The core curl tests passed:
